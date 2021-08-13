@@ -1,0 +1,118 @@
+// widget = tkcommand(parent = root, config options
+fred = Button(panel, fg="red",...)
+// config an option
+fred.config(fg="red")
+// perform action on widget
+fred.invoke()
+// widget geometry manager/positioner REQUIRED TO SHOW WIDGET
+fred.pack(side="left")
+///////////////
+///////////////
+///////////////
+Packer Options
+///////////////
+///////////////
+///////////////
+For more extensive information on the packer and the options that it can take, see the man pages and page 183 of John Ousterhout’s book.
+
+anchor
+
+    Anchor type. Denotes where the packer is to place each slave in its parcel.
+expand
+
+    Boolean, 0 or 1.
+fill
+
+    Legal values: 'x', 'y', 'both', 'none'.
+ipadx and ipady
+
+    A distance - designating internal padding on each side of the slave widget.
+padx and pady
+
+    A distance - designating external padding on each side of the slave widget.
+side
+
+    Legal values are: 'left', 'right', 'top', 'bottom'.
+
+//std options vs widget specific optiosn
+// std options: all wigdets have,
+// widget specific options: specific widgets only
+
+///////////////
+///////////////
+Coupling Widget Variables¶
+///////////////
+///////////////
+
+The current-value setting of some widgets (like text entry widgets) can be connected directly to application variables by using special options. These options are variable, textvariable, onvalue, offvalue, and value. This connection works both ways: if the variable changes for any reason, the widget it’s connected to will be updated to reflect the new value.
+
+Unfortunately, in the current implementation of tkinter it is not possible to hand over an arbitrary Python variable to a widget through a variable or textvariable option. The only kinds of variables for which this works are variables that are subclassed from a class called Variable, defined in tkinter.
+
+There are many useful subclasses of Variable already defined: StringVar, IntVar, DoubleVar, and BooleanVar. To read the current value of such a variable, call the get() method on it, and to change its value you call the set() method. If you follow this protocol, the widget will always track the value of the variable, with no further intervention on your part.
+
+For example:
+
+import tkinter as tk
+
+class App(tk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.pack()
+
+        self.entrythingy = tk.Entry()
+        self.entrythingy.pack()
+
+        # Create the application variable.
+        self.contents = tk.StringVar()
+        # Set it to some value.
+        self.contents.set("this is a variable")
+        # Tell the entry widget to watch this variable.
+        self.entrythingy["textvariable"] = self.contents
+
+        # Define a callback for when the user hits return.
+        # It prints the current value of the variable.
+        self.entrythingy.bind('<Key-Return>',
+                             self.print_contents)
+
+    def print_contents(self, event):
+        print("Hi. The current entry content is:",
+              self.contents.get())
+
+
+///////////////
+///////////////
+Bindings and Events
+///////////////
+///////////////
+
+The bind method from the widget command allows you to watch for certain events and to have a callback function trigger when that event type occurs. The form of the bind method is:
+
+def bind(self, sequence, func, add=''):
+
+where:
+
+sequence
+
+    is a string that denotes the target kind of event. (See the bind man page and page 201 of John Ousterhout’s book for details).
+func
+
+    is a Python function, taking one argument, to be invoked when the event occurs. An Event instance will be passed as the argument. (Functions deployed this way are commonly known as callbacks.)
+add
+
+    is optional, either '' or '+'. Passing an empty string denotes that this binding is to replace any other bindings that this event is associated with. Passing a '+' means that this function is to be added to the list of functions bound to this event type.
+
+focus,height,keycode,state,time,width,x&y,char,send_event,keysm,type,widget,x_root,y_root
+
+///////////////
+///////////////
+Other important features
+///////////////
+///////////////
+index paratemres:widget specific constructor varibles defining behavior
+file handlers: callback functions when file i/o is possible
+Window Manager: Access windows gui elements, e.g. icon
+
+
+
+
+
