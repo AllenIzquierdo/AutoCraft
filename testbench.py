@@ -2,6 +2,13 @@ import mysql.connector
 import csv 
 
 class CrafterLexica:
+    dataminedictionary = {
+        'item':'Item.csv',
+        'recipe':'Recipe.csv',
+        'recipelevel':'RecipeLevelTable.csv',
+        'crafttype':'CraftType.csv'
+        }
+    datamineLocation = 'ffxiv-datamining-master/csv/'
     def __init__(self, database, cursor, dataBaseName):
         self.cursor = cursor #sql query object
         self.dataBaseName = dataBaseName #what db should I use
@@ -20,6 +27,9 @@ class CrafterLexica:
             print("Failed Query: {}".format(err))
             exit(1)
 
+    def autoLoadTables(self):
+        self.loadTablesFromFolder(self.datamineLocation, self.dataminedictionary)
+        
     def loadTablesFromFolder(self, folderpath, dataminedict):
         for key, filename in dataminedict.items():
             pathtofile = folderpath + filename

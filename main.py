@@ -5,19 +5,13 @@ import testbench
 from testbench import CrafterLexica
 
 class Application(tk.Frame):
-    dataminedictionary = {
-        'item':'Item.csv',
-        'recipe':'Recipe.csv',
-        'recipelevel':'RecipeLevelTable.csv',
-        'crafttype':'CraftType.csv'
-        }
 
     def __init__(self, master=None):
         super().__init__(master)
         #data managment
         self.dbconnect()
         self.craftlexica = CrafterLexica(self.db, self.cursor,'craftlexica')
-        self.craftlexica.loadTablesFromFolder('ffxiv-datamining-master/csv/', self.dataminedictionary)
+        #self.craftlexica.loadTablesFromFolder('ffxiv-datamining-master/csv/', self.dataminedictionary)
         #self.craftlexica.loadTable('','testitems')
         #gui managment
         self.master = master
@@ -32,7 +26,7 @@ class Application(tk.Frame):
         self.readNext = tk.Button(self, text="readCVS", bg="black",fg="white",command=self.readCVS)
         self.readNext.pack(side="top")
 
-        self.loadtable = tk.Button(self, text="loadtable", bg="black",fg="white",command=self.craftlexica.loadTable)
+        self.loadtable = tk.Button(self, text="loadtable", bg="black",fg="white",command=self.craftlexica.autoLoadTables)
         self.loadtable.pack(side="top")
 
         self.quit = tk.Button(self, text="QUIT", fg="red",command=self.master.destroy)
