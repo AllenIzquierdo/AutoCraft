@@ -18,7 +18,6 @@ class CrafterLexica:
         dbname = (dataBaseName,)
         if dbname not in self.cursor.fetchall():
             self.tryquery("CREATE DATABASE {}".format(dbname[0]))
-            
     def tryquery(self, query, multi=False):
         try:
             print(query)
@@ -125,8 +124,10 @@ class CrafterLexica:
 
             if index != 0:#variable seperator
                 sqlCreateTable+=','
-
-            sqlCreateTable += columnName +" "+ sqlColumnTypes[index]
+            if index==0:
+                sqlCreateTable += tablename + "id " + sqlColumnTypes[index]
+            else:
+                sqlCreateTable += columnName +" "+ sqlColumnTypes[index]
         sqlCreateTable += ');'
 
         #prep table load query
@@ -137,8 +138,11 @@ class CrafterLexica:
 
             if index in emptyColumnsIndexes:
                 sqlLoadData+='@dummy'
+            elif index == 0:
+                sqlLoadData += tablename+'id'
+
             else:
-                sqlLoadData+= columnName
+                sqlLoadData += columnName
         sqlLoadData += ");"
         
         #execute querys 
