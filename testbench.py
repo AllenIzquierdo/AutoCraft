@@ -2,13 +2,42 @@ import mysql.connector
 import csv 
 
 class CrafterLexica:
+    # iterators use this dictionary to find and label relavant data.
     dataminedictionary = {
         'item':'Item.csv',
         'recipe':'Recipe.csv',
         'recipelevel':'RecipeLevelTable.csv',
-        'crafttype':'CraftType.csv'
+        'crafttype':'CraftType.csv' #crafttype key is hardcoded to parse CraftType.csv with \\r\\n line terminator, located in loadtable func, CHANGE SOLUTION IF CHANGE KEY
         }
+    # tuple structure copied onto new items
+    recipeStructure = (
+        ('itemid',None),
+        ('itemname',None),
+        ('resultcount',None),
+        ('requiredcount',None),
+        ('ingredients',{}) #dictionary with jobtype:[ingredientItemStruct1,ingredientItemStruct2,...]
+        # other item parameters might add later (add as needed to resolve minigame)
+        # Crafttype    Recipie Level Table    Item{result}    Item{ammount}    Item{ingredient}[0,9]    Ammount{ingredient}[0,9]    Material Qaulity Factor    Difficulty Factor    Qauilty Factor    Durability Factor    QuickSynthControl    QuickSynthCraftmanship    Secret Recipe Book    CanQuickSynth    CanHq    ExpRewarded    Status{Required}
+        )
     datamineLocation = 'ffxiv-datamining-master/csv/'
+
+    def getRecipeStruct(self,itemname=None,itemid=None):
+        if not itemname and not itemid:
+            return None
+
+        if itemname and not itemid:
+            itemid = self.getItemId(itemname)
+
+        if itemid and not itemname:
+            itemname = self.getItemName(itemid)
+        newitem = dict(self.recipeStructure)
+        newitem['itemid'] = itemid
+        newitem['itemname'] = itemname
+        
+        
+            
+            
+            
     def __init__(self, database, cursor, dataBaseName):
         self.cursor = cursor #sql query object
         self.dataBaseName = dataBaseName #what db should I use
@@ -18,6 +47,8 @@ class CrafterLexica:
         dbname = (dataBaseName,)
         if dbname not in self.cursor.fetchall():
             self.tryquery("CREATE DATABASE {}".format(dbname[0]))
+
+    # get results with self.cursor.fetchall() (fornowanyway), note, returns array, where array index represents result row in form of a tupple; result=[(row1.1,row1.2,..),(row2.1,row2.1,..),..]
     def tryquery(self, query, multi=False):
         try:
             print(query)
@@ -34,6 +65,40 @@ class CrafterLexica:
             pathtofile = folderpath + filename
             self.loadTable(pathtofile,key)
             
+    # expects unquoted string, exact match
+    def getKeyvalueId(self,keyvaluename,tablename):
+        def quote(inputstring):
+            return '"'+inputstring+'"'
+        self.tryquery('USE craftlexica;')
+        query = 'SELECT '+tablename+'id FROM '+tablename+' WHERE `Name`={}'.format(quote(keyvaluename))
+        self.tryquery(query)
+        return self.cursor.fetchall()[0][0]
+            
+    # (integer)itemid: id of target item
+    # (string)return: Name of target item
+    def getKeyvalueName(self,keyvalueid,tablename):
+        self.tryquery('USE craftlexica;')
+        query = "SELECT Name FROM "+tablename+" WHERE `"+tablename+"id`={}".format(keyvalueid)
+        self.tryquery(query)
+        try: 
+            return self.cursor.fetchall()[0][0]
+        except IndexError as error:
+            print(error)
+            return None
+            
+    
+    #specialized get functions
+    def getItemId(self,itemname):
+        return self.getKeyvalueId(itemname, 'item')
+            
+    def getItemName(self,itemid):
+        return self.getKeyvalueName(itemid,'item')
+
+    def getCrafttypeId(self,crafttypename):
+        return self.getKeyvalueId(crafttypename, 'crafttype')
+            
+    def getCrafttypeName(self,crafttypeid):
+        return self.getKeyvalueName(crafttypeid,'crafttype')
 
     #file location: location of datamined csv file
     #tablename: the name of the datamine table on mysql database
@@ -46,9 +111,9 @@ class CrafterLexica:
         def backtickquote(inputstring):
             return "`"+inputstring+"`"
 
+
         def quote(inputstring):
             return '"'+inputstring+'"'
-
         #drop table if it exist
         tupletablename = (tablename.lower(),)
         self.tryquery('SHOW TABLES')
@@ -130,8 +195,13 @@ class CrafterLexica:
                 sqlCreateTable += columnName +" "+ sqlColumnTypes[index]
         sqlCreateTable += ');'
 
+        #use \\r\\n line terminator, which is exclusvie fo CraftType.csv
+        lineterminator = '\\n'
+        if tablename == 'crafttype':
+            lineterminator = '\\r\\n'
+            
         #prep table load query
-        sqlLoadData = ("LOAD DATA LOCAL INFILE {} INTO TABLE {} FIELDS TERMINATED BY ',' ENCLOSED BY '"+'"'+"' LINES TERMINATED BY '\\n' IGNORE 3 LINES (").format(quote(filelocation), tablename)
+        sqlLoadData = ("LOAD DATA LOCAL INFILE {} INTO TABLE {} FIELDS TERMINATED BY ',' ENCLOSED BY '"+'"'+"' LINES TERMINATED BY '"+lineterminator+"' IGNORE 3 LINES (").format(quote(filelocation), tablename)
         for index, columnName in enumerate(columnIdentifiers):
             if index != 0:#variable seperator
                 sqlLoadData+=','
