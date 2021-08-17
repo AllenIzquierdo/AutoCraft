@@ -40,7 +40,8 @@ class Application(tk.Frame):
         self.quit.pack(side="bottom")
 
     def executeGetIngredients(self):
-        print(self.craftlexica.getRecipeStruct(itemid = 5056,recursion=True))
+        #print(self.craftlexica.getRecipeStruct(itemid = 5056,recursion=True))
+        print(self.craftlexica.getRecipeStruct(itemname=self.commandWindow.get(),recursion=True))
 
     def executeGetItemId(self):
         #queryresult = self.craftlexica.getItemId(self.commandWindow.get())

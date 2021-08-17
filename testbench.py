@@ -49,36 +49,19 @@ class CrafterLexica:
                 itemstruct['cancraft'] = False
                 return itemstruct
             return None
-        
+        else:
+                itemstruct['cancraft'] = True
+            
         # fundamentaly change recipe structure if multiple jobs can craft
         if len(result) > 1 :
             itemstruct['multipleJobsCanCraft']=True
-            #must use same storage schema for both parts of if/else statement
-            for craftoption in result:
-                #item struct array
-                itemstruct['ingredients_'+self.getCrafttypeName(craftoption[0])]=[]
-                itemstruct['resultcount_'+self.getCrafttypeName(craftoption[0])] = craftoption[1]
-                index = ingredients_start_index # skip non-ingredients
-                while index < len(craftoption):
-                    #skip empty ingredients
-                    if craftoption[index]==0 or craftoption[index]<0:
-                        index+=2
-                        continue
-
-                    newitem = dict(self.recipeStructure)
-                    newitem['itemid'] = craftoption[index]
-                    newitem['itemname'] = self.getItemName(newitem['itemid'])
-                    newitem['requiredcount'] = craftoption[index+1]
-
-                    if recursion == True:
-                        newitem = self.getRecipeStruct(itemstruct=newitem, recursion=recursion)
-                    itemstruct['ingredients_'+self.getCrafttypeName(craftoption[0])].append(newitem)
-                    index+=2
         else:
             itemstruct['multipleJobsCanCraft']=False
-            craftoption = result[0]
-            itemstruct['ingredients'] = []
-            itemstruct['resultcount'] = craftoption[1]
+            #must use same storage schema for both parts of if/else statement
+        for craftoption in result:
+            #item struct array
+            itemstruct['ingredients_'+self.getCrafttypeName(craftoption[0])]=[]
+            itemstruct['resultcount_'+self.getCrafttypeName(craftoption[0])] = craftoption[1]
             index = ingredients_start_index # skip non-ingredients
             while index < len(craftoption):
                 #skip empty ingredients
@@ -93,7 +76,7 @@ class CrafterLexica:
 
                 if recursion == True:
                     newitem = self.getRecipeStruct(itemstruct=newitem, recursion=recursion)
-                itemstruct['ingredients'].append(newitem)
+                itemstruct['ingredients_'+self.getCrafttypeName(craftoption[0])].append(newitem)
                 index+=2
         return itemstruct
         
