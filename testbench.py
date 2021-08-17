@@ -1,5 +1,6 @@
 import mysql.connector
 import csv 
+from pygetwindow._pygetwindow_win import cursor
 
 class CrafterLexica:
     # iterators use this dictionary to find and label relavant data.
@@ -13,27 +14,88 @@ class CrafterLexica:
     recipeStructure = (
         ('itemid',None),
         ('itemname',None),
-        ('resultcount',None),
-        ('requiredcount',None),
-        ('ingredients',{}) #dictionary with jobtype:[ingredientItemStruct1,ingredientItemStruct2,...]
         # other item parameters might add later (add as needed to resolve minigame)
         # Crafttype    Recipie Level Table    Item{result}    Item{ammount}    Item{ingredient}[0,9]    Ammount{ingredient}[0,9]    Material Qaulity Factor    Difficulty Factor    Qauilty Factor    Durability Factor    QuickSynthControl    QuickSynthCraftmanship    Secret Recipe Book    CanQuickSynth    CanHq    ExpRewarded    Status{Required}
         )
     datamineLocation = 'ffxiv-datamining-master/csv/'
-
-    def getRecipeStruct(self,itemname=None,itemid=None):
-        if not itemname and not itemid:
+     
+    def getRecipeStruct(self,itemname=None,itemid=None, itemstruct=None, recursion = False):
+        if not itemname and not itemid and not itemstruct:
             return None
 
-        if itemname and not itemid:
-            itemid = self.getItemId(itemname)
 
-        if itemid and not itemname:
-            itemname = self.getItemName(itemid)
-        newitem = dict(self.recipeStructure)
-        newitem['itemid'] = itemid
-        newitem['itemname'] = itemname
+        if itemstruct==None:
+            if itemname and not itemid:
+                itemid = self.getItemId(itemname)
+
+            if itemid and not itemname:
+                itemname = self.getItemName(itemid)
+            itemstruct = dict(self.recipeStructure)
+            itemstruct['itemid'] = itemid
+            itemstruct['itemname'] = itemname
+        else:
+            itemid = itemstruct['itemid']
+            itemname = itemstruct['itemname'] 
+        #self.tryquery("SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`='craftlexica' and `TABLE_NAME`='recipe' AND   `COLUMN_NAME` LIKE '%Amount{I%' or `COLUMN_NAME` LIKE '%Item{I%';")
+        #results = self.cursor.fetchall()
+        ingredients_start_index = 2;
+        sqlquery = "SELECT `CraftType`,`Amount{Result}`,`Item{Ingredient}[0]`,`Amount{Ingredient}[0]`,`Item{Ingredient}[1]`,`Amount{Ingredient}[1]`,`Item{Ingredient}[2]`,`Amount{Ingredient}[2]`,`Item{Ingredient}[3]`,`Amount{Ingredient}[3]`,`Item{Ingredient}[4]`,`Amount{Ingredient}[4]`,`Item{Ingredient}[5]`,`Amount{Ingredient}[5]`,`Item{Ingredient}[6]`,`Amount{Ingredient}[6]`,`Item{Ingredient}[7]`,`Amount{Ingredient}[7]`,`Item{Ingredient}[8]`,`Amount{Ingredient}[8]`,`Item{Ingredient}[9]`,`Amount{Ingredient}[9]` FROM recipe WHERE `Item{Result}`="+str(itemid)+";"
+        self.tryquery(sqlquery)
+        result = self.cursor.fetchall()
+        # return None when no recipe is found
+        if len(result) == 0:
+            # returns itemstruct with with cancraft termination
+            if recursion == True:
+                itemstruct['cancraft'] = False
+                return itemstruct
+            return None
         
+        # fundamentaly change recipe structure if multiple jobs can craft
+        if len(result) > 1 :
+            itemstruct['multipleJobsCanCraft']=True
+            #must use same storage schema for both parts of if/else statement
+            for craftoption in result:
+                #item struct array
+                itemstruct['ingredients_'+self.getCrafttypeName(craftoption[0])]=[]
+                itemstruct['resultcount_'+self.getCrafttypeName(craftoption[0])] = craftoption[1]
+                index = ingredients_start_index # skip non-ingredients
+                while index < len(craftoption):
+                    #skip empty ingredients
+                    if craftoption[index]==0 or craftoption[index]<0:
+                        index+=2
+                        continue
+
+                    newitem = dict(self.recipeStructure)
+                    newitem['itemid'] = craftoption[index]
+                    newitem['itemname'] = self.getItemName(newitem['itemid'])
+                    newitem['requiredcount'] = craftoption[index+1]
+
+                    if recursion == True:
+                        newitem = self.getRecipeStruct(itemstruct=newitem, recursion=recursion)
+                    itemstruct['ingredients_'+self.getCrafttypeName(craftoption[0])].append(newitem)
+                    index+=2
+        else:
+            itemstruct['multipleJobsCanCraft']=False
+            craftoption = result[0]
+            itemstruct['ingredients'] = []
+            itemstruct['resultcount'] = craftoption[1]
+            index = ingredients_start_index # skip non-ingredients
+            while index < len(craftoption):
+                #skip empty ingredients
+                if craftoption[index]==0 or craftoption[index]<0:
+                    index+=2
+                    continue
+
+                newitem = dict(self.recipeStructure)
+                newitem['itemid'] = craftoption[index]
+                newitem['itemname'] = self.getItemName(newitem['itemid'])
+                newitem['requiredcount'] = craftoption[index+1]
+
+                if recursion == True:
+                    newitem = self.getRecipeStruct(itemstruct=newitem, recursion=recursion)
+                itemstruct['ingredients'].append(newitem)
+                index+=2
+        return itemstruct
         
             
             
@@ -83,7 +145,6 @@ class CrafterLexica:
         try: 
             return self.cursor.fetchall()[0][0]
         except IndexError as error:
-            print(error)
             return None
             
     

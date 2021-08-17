@@ -31,13 +31,17 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.create_button('loadtable','load all tables',buttonaction=self.craftlexica.autoLoadTables)
         self.create_button('getitemid','get item id',buttonaction=self.executeGetItemId)
+        self.create_button('getIngredients','get item ingredients',buttonaction=self.executeGetIngredients)
 
         self.commandWindow = tk.Entry(self, bg="black",fg="white",width=50)
         self.commandWindow.pack(side="top")
 
         self.quit = tk.Button(self, text="QUIT", fg="red",command=self.master.destroy)
         self.quit.pack(side="bottom")
-        
+
+    def executeGetIngredients(self):
+        print(self.craftlexica.getRecipeStruct(itemid = 5056,recursion=True))
+
     def executeGetItemId(self):
         #queryresult = self.craftlexica.getItemId(self.commandWindow.get())
         #general use csvid csvname tseting function
