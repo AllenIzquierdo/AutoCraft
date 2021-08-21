@@ -32,12 +32,19 @@ class Application(tk.Frame):
         self.create_button('loadtable','load all tables',buttonaction=self.craftlexica.autoLoadTables)
         self.create_button('getitemid','get item id',buttonaction=self.executeGetItemId)
         self.create_button('getIngredients','get item ingredients',buttonaction=self.executeGetIngredients)
+        self.create_button('getBOM','get item bom',buttonaction=self.executeGetBOM)
 
         self.commandWindow = tk.Entry(self, bg="black",fg="white",width=50)
         self.commandWindow.pack(side="top")
 
         self.quit = tk.Button(self, text="QUIT", fg="red",command=self.master.destroy)
         self.quit.pack(side="bottom")
+
+    def executeGetBOM(self):
+        recipe = self.craftlexica.getRecipeStruct(itemname=self.commandWindow.get(),recursion=True)
+        print(recipe)
+        print(self.craftlexica.getBOM(recipe,recursion=1,multiplier=2))
+
 
     def executeGetIngredients(self):
         #print(self.craftlexica.getRecipeStruct(itemid = 5056,recursion=True))

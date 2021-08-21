@@ -1,6 +1,7 @@
 import mysql.connector
 import csv 
 from pygetwindow._pygetwindow_win import cursor
+from numpy import require
 
 class CrafterLexica:
     # iterators use this dictionary to find and label relavant data.
@@ -13,7 +14,7 @@ class CrafterLexica:
     # tuple structure copied onto new items
     recipeStructure = (
         ('itemid',None),
-        ('itemname',None),
+        ('itemname',None)
         # other item parameters might add later (add as needed to resolve minigame)
         # Crafttype    Recipie Level Table    Item{result}    Item{ammount}    Item{ingredient}[0,9]    Ammount{ingredient}[0,9]    Material Qaulity Factor    Difficulty Factor    Qauilty Factor    Durability Factor    QuickSynthControl    QuickSynthCraftmanship    Secret Recipe Book    CanQuickSynth    CanHq    ExpRewarded    Status{Required}
         )
@@ -35,7 +36,7 @@ class CrafterLexica:
             itemstruct['itemname'] = itemname
         else:
             itemid = itemstruct['itemid']
-            itemname = itemstruct['itemname'] 
+            itemname = itemstruct['itemname']
         #self.tryquery("SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`='craftlexica' and `TABLE_NAME`='recipe' AND   `COLUMN_NAME` LIKE '%Amount{I%' or `COLUMN_NAME` LIKE '%Item{I%';")
         #results = self.cursor.fetchall()
         ingredients_start_index = 2;
@@ -72,7 +73,7 @@ class CrafterLexica:
                 newitem = dict(self.recipeStructure)
                 newitem['itemid'] = craftoption[index]
                 newitem['itemname'] = self.getItemName(newitem['itemid'])
-                newitem['requiredcount'] = craftoption[index+1]
+                newitem['requiredcount'] = craftoption[(index+1)]
 
                 if recursion == True:
                     newitem = self.getRecipeStruct(itemstruct=newitem, recursion=recursion)
@@ -80,6 +81,55 @@ class CrafterLexica:
                 index+=2
         return itemstruct
         
+    def getBOM(self,recipes, BOM=None, multiplier=1, recursion = False, randomjobassign = True, Tier = 1):
+        if BOM == None:
+            BOM = {}
+        #converts puts recipes into a list if its a dictionary
+        if type(recipes) is dict:
+            recipes = [recipes]
+
+        for recipe in recipes:
+            #item stats
+            itemname = recipe['itemname']
+            #assumes top level recipe
+            requiredcount = 1
+            if 'requiredcount' in recipe.keys():
+                requiredcount = recipe['requiredcount']
+            totalrequiredcount = requiredcount*multiplier
+            cancraft = recipe['cancraft']
+            jobname = ""
+
+            #item stat storage
+            if itemname in BOM.keys():
+                #updates item BOM stats
+                #multiplier for recursion item multiplying.
+                BOM[itemname]['requiredcount'] += totalrequiredcount
+                #assign craft tier (higher gets crafted first)
+                if BOM[itemname]['Tier'] < Tier:
+                    BOM[itemname]['Tier'] = Tier
+                jobname = BOM[itemname]['jobname']
+            else:
+                #enter new item index
+                if cancraft:
+                    for key in recipe.keys():
+                        #jobname starts @ string[12]
+                        if 'ingredients_' in key:
+                            jobname = key[12:]
+                BOM[itemname] = {'requiredcount':totalrequiredcount,
+                                 'Tier':Tier,
+                                 'jobname':jobname,
+                                 'cancraft':cancraft}
+            
+            #recursion
+            if recursion and cancraft:
+                newmultiplier = multiplier*requiredcount # passes down qty needed to craft
+                Tier+=1 # passes down craft order (inverted, higher goes first)
+                for ingredient in recipe['ingredients_'+jobname]:
+                    BOM = self.getBOM(ingredient,BOM,multiplier=newmultiplier,recursion=recursion,Tier=Tier)
+                    
+
+        return BOM                
+            
             
             
             
@@ -128,6 +178,7 @@ class CrafterLexica:
         try: 
             return self.cursor.fetchall()[0][0]
         except IndexError as error:
+            print(error)
             return None
             
     
