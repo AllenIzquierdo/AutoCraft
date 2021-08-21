@@ -1,7 +1,5 @@
 import mysql.connector
 import csv 
-from pygetwindow._pygetwindow_win import cursor
-from numpy import require
 
 class CrafterLexica:
     # iterators use this dictionary to find and label relavant data.
@@ -107,18 +105,22 @@ class CrafterLexica:
                 #assign craft tier (higher gets crafted first)
                 if BOM[itemname]['Tier'] < Tier:
                     BOM[itemname]['Tier'] = Tier
-                jobname = BOM[itemname]['jobname']
+                if cancraft:
+                    jobname = BOM[itemname]['jobname']
             else:
                 #enter new item index
+                BOM[itemname] = {'requiredcount':totalrequiredcount,
+                                 'Tier':Tier}
+                #add craft parameters
                 if cancraft:
                     for key in recipe.keys():
                         #jobname starts @ string[12]
                         if 'ingredients_' in key:
                             jobname = key[12:]
-                BOM[itemname] = {'requiredcount':totalrequiredcount,
-                                 'Tier':Tier,
-                                 'jobname':jobname,
-                                 'cancraft':cancraft}
+                    BOM[itemname]['jobname']=jobname
+                    BOM[itemname]['cancraft']=cancraft
+                    BOM[itemname]['resultcount']=recipe['resultcount_'+jobname]
+            print(recipe)
             
             #recursion
             if recursion and cancraft:
