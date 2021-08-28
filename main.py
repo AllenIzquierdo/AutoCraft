@@ -2,7 +2,8 @@ import tkinter as tk
 import csv
 import mysql.connector
 import testbench
-from testbench import CrafterLexica
+from CraftLexica import CrafterLexica
+from testbench import FF14_IOMASTER, TextImgParser
 
 class Application(tk.Frame):
 
@@ -16,12 +17,13 @@ class Application(tk.Frame):
         #self.craftlexica.loadTable('','testitems')
         #gui managment
         self.master = master
+        #self.master.config(height = 720, width = 1080)
+        #self.master.pack_propagate(0)
         self.pack()
         self.create_widgets()
-        #Open data file
-        #csv file objects should be opened with newline=''
-        #self.cvsfile = csv.reader(open('Item.csv',newline=''))
-        #self.checkDatabase()
+        # FF14 IO MASTER
+        self.iomaster = FF14_IOMASTER()
+        self.textImgParser = TextImgParser()
 
     def create_button(self,buttonname, buttontext, buttonaction=None):
         newbutton = tk.Button(self, text=buttontext, bg="black",fg="white",command=buttonaction)
@@ -33,12 +35,19 @@ class Application(tk.Frame):
         self.create_button('getitemid','get item id',buttonaction=self.executeGetItemId)
         self.create_button('getIngredients','get item ingredients',buttonaction=self.executeGetIngredients)
         self.create_button('getBOM','get item bom',buttonaction=self.executeGetBOM)
+        self.create_button('capimg','capture image',buttonaction=self.executeImgCap)
 
-        self.commandWindow = tk.Entry(self, bg="black",fg="white",width=50)
-        self.commandWindow.pack(side="top")
+        self.commandWindow = tk.Entry(self, bg="black",fg="white")
+        self.commandWindow.pack(side="top", ipadx=200,ipady=200)
+        self.master.geometry("1920x1080")
 
         self.quit = tk.Button(self, text="QUIT", fg="red",command=self.master.destroy)
         self.quit.pack(side="bottom")
+
+    def executeImgCap(self):
+        #self.iomaster.capture_img()
+        img = self.textImgParser.loadImg('craftcondition.jpg')
+        print(self.textImgParser.readImgText(img))
 
     def executeGetBOM(self):
         recipe = self.craftlexica.getRecipeStruct(itemname=self.commandWindow.get(),recursion=True)
